@@ -8,7 +8,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
     from match_utils import calculate_matches
-except ImportError:
+    print("Successfully imported match_utils")
+except ImportError as e:
+    print(f"Failed to import match_utils: {e}")
     # Fallback if match_utils is not available
     def calculate_matches(student_profile, internships):
         # Simple fallback matching logic
