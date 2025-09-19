@@ -4,7 +4,18 @@ import sys
 import os
 
 # Add the parent directory to Python path to import match_utils
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import os
+import sys
+
+# Get the directory of this file, handling both __file__ and exec scenarios
+try:
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+except NameError:
+    # When running with exec(), __file__ is not defined
+    current_dir = os.path.dirname(os.path.abspath("api/index.py"))
+
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
 
 try:
     from match_utils import calculate_matches
@@ -36,7 +47,11 @@ except ImportError as e:
         return results
 
 app = Flask(__name__)
-CORS(app, origins=["*"], methods=["GET", "POST", "OPTIONS"], allow_headers=["Content-Type", "Authorization"])
+CORS(app, 
+     origins=["*"], 
+     methods=["GET", "POST", "OPTIONS"], 
+     allow_headers=["Content-Type", "Authorization", "Accept"],
+     supports_credentials=True)
 
 # Add explicit OPTIONS handling for preflight requests
 @app.before_request
@@ -44,9 +59,17 @@ def handle_preflight():
     if request.method == "OPTIONS":
         response = jsonify({})
         response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add("Access-Control-Allow-Headers", "*")
-        response.headers.add("Access-Control-Allow-Methods", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept")
+        response.headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        response.headers.add("Access-Control-Max-Age", "86400")
         return response
+
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept')
+    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    return response
 
 # In-memory data
 ALL_STUDENTS = [
@@ -258,18 +281,6 @@ def get_all_students():
     """Get all students (for admin purposes)"""
     return jsonify(ALL_STUDENTS)
 
-# For Vercel serverless functions
-from werkzeug.middleware.dispatcher import DispatcherMiddleware
-
-# Vercel handler function
-app.wsgi_app = app.wsgi_app
-
-def handler(environ, start_response):
-    return app(environ, start_response)
-
-# Export for Vercel
-def app_handler(environ, start_response):
-    return app(environ, start_response)
-
+# Default export for Vercel
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=5000)

@@ -21,9 +21,20 @@ const selectedSkillsDisplay = document.getElementById('selected-skills');
 const themeToggle = document.getElementById('theme-toggle');
 
 // API base URL - automatically detects environment
-const API_BASE_URL = window.location.hostname === 'localhost' 
-    ? 'http://localhost:5000' 
-    : window.location.origin;
+function getApiBaseUrl() {
+    const hostname = window.location.hostname;
+    
+    // If running locally
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        return 'http://localhost:5000';
+    }
+    
+    // If deployed on Vercel or other platforms
+    return window.location.origin;
+}
+
+const API_BASE_URL = getApiBaseUrl();
+console.log('API Base URL:', API_BASE_URL);
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
@@ -201,9 +212,39 @@ function initializeButtons() {
 }
 
 // API functions
+async function testApiConnectivity() {
+    try {
+        console.log('Testing API connectivity...');
+        const response = await fetch(`${API_BASE_URL}/api/health`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('API health check successful:', data);
+            return true;
+        } else {
+            console.warn('API health check failed:', response.status, response.statusText);
+            return false;
+        }
+    } catch (error) {
+        console.warn('API health check error:', error.message);
+        return false;
+    }
+}
+
 async function findMatches(skills) {
     showLoading();
     displaySelectedSkills(skills);
+    
+    // First test API connectivity
+    const apiWorking = await testApiConnectivity();
+    if (!apiWorking) {
+        console.warn('API health check failed, but continuing with main request...');
+    }
     
     try {
         console.log('Making API request to:', `${API_BASE_URL}/api/match-skills`);
@@ -224,7 +265,18 @@ async function findMatches(skills) {
         if (!response.ok) {
             const errorText = await response.text();
             console.error('Error response:', errorText);
-            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+            
+            // Provide more specific error messages
+            let errorMessage = `HTTP error! status: ${response.status}`;
+            if (response.status === 404) {
+                errorMessage += '. The API endpoint was not found. Please check if the server is running.';
+            } else if (response.status === 405) {
+                errorMessage += '. Method not allowed. The server may not support POST requests on this endpoint.';
+            } else if (response.status >= 500) {
+                errorMessage += '. Server error. Please try again later.';
+            }
+            
+            throw new Error(`${errorMessage}, message: ${errorText}`);
         }
         
         const matches = await response.json();
