@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "outputDirectory": "./",
   "functions": {
     "api/index.py": {
       "includeFiles": "match_utils.py"
@@ -15,7 +16,7 @@
       "dest": "/index.html"
     },
     {
-      "src": "/(.*\\.(css|js|ico|png|jpg|jpeg|gif|svg))",
+      "src": "/(.*\\.(css|js|ico|png|jpg|jpeg|gif|svg|html))",
       "dest": "/$1"
     },
     {
