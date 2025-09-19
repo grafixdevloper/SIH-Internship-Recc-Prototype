@@ -20,8 +20,10 @@ const noMatches = document.getElementById('no-matches');
 const selectedSkillsDisplay = document.getElementById('selected-skills');
 const themeToggle = document.getElementById('theme-toggle');
 
-// API base URL - change this to your backend URL
-const API_BASE_URL = 'http://localhost:5000';
+// API base URL - automatically detects environment
+const API_BASE_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:5000' 
+    : window.location.origin;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {

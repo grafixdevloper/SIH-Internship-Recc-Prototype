@@ -1,0 +1,35 @@
+{
+  "name": "gov-internship-matcher",
+  "version": "1.0.0",
+  "description": "AI-powered government internship matching platform",
+  "main": "index.js",
+  "scripts": {
+    "build": "echo 'Build complete'",
+    "start": "python api/index.py",
+    "dev": "python intern_ai_backend.py",
+    "install-python-deps": "pip install -r requirements.txt"
+  },
+  "keywords": [
+    "internship",
+    "government",
+    "ai",
+    "matching",
+    "flask",
+    "smart-india-hackathon"
+  ],
+  "author": "SIH Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/gov-internship-matcher.git"
+  },
+  "engines": {
+    "node": ">=14.x"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "browserslist": [
+    "> 1%",
+    "last 2 versions"
+  ]
+}
