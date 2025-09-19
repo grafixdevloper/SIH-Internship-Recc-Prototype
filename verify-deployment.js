@@ -10,6 +10,7 @@ console.log(`📍 Target: ${DEPLOYMENT_URL}`);
 
 const endpoints = [
     '/api/health',
+    '/api/test',
     '/api/internships',
     '/api/students'
 ];

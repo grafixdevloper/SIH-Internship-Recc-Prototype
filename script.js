@@ -206,23 +206,33 @@ async function findMatches(skills) {
     displaySelectedSkills(skills);
     
     try {
+        console.log('Making API request to:', `${API_BASE_URL}/api/match-skills`);
+        console.log('With skills:', skills);
+        
         const response = await fetch(`${API_BASE_URL}/api/match-skills`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
             body: JSON.stringify({ skills: skills })
         });
         
+        console.log('Response status:', response.status);
+        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+        
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const errorText = await response.text();
+            console.error('Error response:', errorText);
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
         
         const matches = await response.json();
+        console.log('Received matches:', matches);
         displayMatches(matches);
     } catch (error) {
         console.error('Error finding matches:', error);
-        showError('Failed to find matches. Please make sure the backend server is running.');
+        showError(`Failed to find matches: ${error.message}. Please check the console for more details.`);
     }
 }
 

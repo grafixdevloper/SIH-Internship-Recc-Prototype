@@ -36,7 +36,17 @@ except ImportError as e:
         return results
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["*"], methods=["GET", "POST", "OPTIONS"], allow_headers=["Content-Type", "Authorization"])
+
+# Add explicit OPTIONS handling for preflight requests
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = jsonify({})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "*")
+        response.headers.add("Access-Control-Allow-Methods", "*")
+        return response
 
 # In-memory data
 ALL_STUDENTS = [
@@ -147,7 +157,29 @@ candidates = [
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """Health check endpoint for Vercel"""
-    return jsonify({"status": "healthy", "message": "Gov Internship Matcher API is running"})
+    return jsonify({
+        "status": "healthy", 
+        "message": "Gov Internship Matcher API is running",
+        "timestamp": "2024-09-19",
+        "version": "1.0.0"
+    })
+
+@app.route('/api/test', methods=['GET', 'POST'])
+def test_endpoint():
+    """Simple test endpoint"""
+    if request.method == 'POST':
+        data = request.get_json() or {}
+        return jsonify({
+            "method": "POST",
+            "received_data": data,
+            "message": "POST test successful"
+        })
+    else:
+        return jsonify({
+            "method": "GET", 
+            "message": "GET test successful",
+            "api_working": True
+        })
 
 @app.route('/api/recommendations/<student_id>', methods=['GET'])
 def get_recommendations(student_id):
@@ -176,33 +208,45 @@ def get_recommendations(student_id):
 def get_candidates(internship_id):
     return jsonify(candidates)
 
-@app.route('/api/match-skills', methods=['POST'])
+@app.route('/api/match-skills', methods=['POST', 'OPTIONS'])
 def match_skills():
-    data = request.json
-    skills = data.get('skills', [])
-    
-    if not skills:
-        return jsonify({"error": "No skills provided"}), 400
-    
-    # Create a mock student profile with the provided skills
-    student_profile = {"skills": skills}
-    
-    # Use AI match function
-    scored = calculate_matches(student_profile, [dict(i) for i in ALL_INTERNSHIPS])
-    
-    # Add back id, title, ministry, location, required_skills, match_score only
-    result = [
-        {
-            "id": i["id"],
-            "title": i["title"],
-            "ministry": i["ministry"],
-            "location": i["location"],
-            "required_skills": i["required_skills"],
-            "match_score": i["match_score"],
-        }
-        for i in scored
-    ]
-    return jsonify(result)
+    if request.method == 'OPTIONS':
+        return jsonify({}), 200
+        
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No JSON data provided"}), 400
+            
+        skills = data.get('skills', [])
+        
+        if not skills:
+            return jsonify({"error": "No skills provided"}), 400
+        
+        # Create a mock student profile with the provided skills
+        student_profile = {"skills": skills}
+        
+        # Use AI match function
+        scored = calculate_matches(student_profile, [dict(i) for i in ALL_INTERNSHIPS])
+        
+        # Add back id, title, ministry, location, required_skills, match_score only
+        result = [
+            {
+                "id": i["id"],
+                "title": i["title"],
+                "ministry": i["ministry"],
+                "location": i["location"],
+                "required_skills": i["required_skills"],
+                "match_score": i["match_score"],
+            }
+            for i in scored
+        ]
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"Error in match_skills: {str(e)}")
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 @app.route('/api/internships', methods=['GET'])
 def get_all_internships():
@@ -217,8 +261,15 @@ def get_all_students():
 # For Vercel serverless functions
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 
+# Vercel handler function
+app.wsgi_app = app.wsgi_app
+
 def handler(environ, start_response):
     return app(environ, start_response)
 
+# Export for Vercel
+def app_handler(environ, start_response):
+    return app(environ, start_response)
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)
