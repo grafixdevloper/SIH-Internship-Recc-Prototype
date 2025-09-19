@@ -38,7 +38,7 @@
   ],
   "functions": {
     "api/index.py": {
-      "includeFiles": ["match_utils.py"]
+      "includeFiles": "match_utils.py"
     }
   }
 }
