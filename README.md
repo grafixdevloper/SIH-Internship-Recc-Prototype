@@ -287,4 +287,5 @@ This project was created for the Smart India Hackathon. Feel free to contribute 
 
 ---
 
-Made with ❤️ for Smart India Hackathon 2024
+Made with ❤️ for Smart India Hackathon 2025, by Team TechVoids
+
